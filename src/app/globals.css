@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/* Mundo visual: tablero de partidas. Ver .impeccable/surfaces/ y DESIGN.md. */
+@theme {
+  --font-sans: var(--font-overpass), ui-sans-serif, system-ui, sans-serif;
+
+  --color-noche: #0f1b2d;
+  --color-noche-2: #1b2b44;
+  --color-noche-regla: #2c3e5a;
+  --color-placa: #f6f2e7;
+  --color-placa-tenue: #b9c2d0;
+  --color-ambar-placa: #f6b73c;
+
+  --color-suelo: #f2f3ef;
+  --color-papel: #fbfbf8;
+  --color-tinta: #141a22;
+  --color-tinta-2: #4b5563;
+  --color-regla: #d8dbd3;
+  --color-resaltado: #e4eaf3;
+
+  --color-termino: #24704a;
+  --color-termino-fondo: #e3f0e7;
+  --color-riesgo: #8a5300;
+  --color-riesgo-fondo: #fbedd0;
+  --color-vencida: #b3261e;
+  --color-vencida-fondo: #f9e1de;
+}
+
+html {
+  background: var(--color-suelo);
+  color: var(--color-tinta);
+  font-feature-settings: "tnum" 1;
+  scrollbar-color: var(--color-noche-regla) var(--color-suelo);
+}
+
+::selection {
+  background: var(--color-ambar-placa);
+  color: var(--color-noche);
+}
+
+input,
+textarea {
+  caret-color: var(--color-noche);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-noche);
+  outline-offset: 2px;
+}
+
+a {
+  text-underline-offset: 0.2em;
+}
+
+/* Gesto distintivo: cada carácter que cambia en una lectura del tablero gira como una paleta. */
+@keyframes paleta {
+  0% {
+    transform: perspective(240px) rotateX(-88deg);
+    opacity: 0.2;
+  }
+  70% {
+    transform: perspective(240px) rotateX(10deg);
+    opacity: 1;
+  }
+  100% {
+    transform: perspective(240px) rotateX(0);
+  }
+}
+
+.paleta {
+  display: inline-block;
+  transform-origin: 50% 0;
+  animation: paleta 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 28ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paleta {
+    animation: none;
+  }
+}
