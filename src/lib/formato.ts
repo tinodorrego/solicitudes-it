@@ -21,6 +21,8 @@ export const ETIQUETA_PRIORIDAD: Record<Prioridad, string> = {
 };
 
 export const ETIQUETA_NIVEL: Record<Nivel, string> = { ALTO: "Alto", MEDIO: "Medio", BAJO: "Bajo" };
+/** La urgencia se nombra en femenino (“urgencia alta”). */
+export const ETIQUETA_URGENCIA: Record<Nivel, string> = { ALTO: "Alta", MEDIO: "Media", BAJO: "Baja" };
 
 export const ETIQUETA_SLA: Record<EstadoSla, string> = {
   EN_TERMINO: "En término",
@@ -28,7 +30,23 @@ export const ETIQUETA_SLA: Record<EstadoSla, string> = {
   VENCIDA: "Vencida",
   SIN_SLA: "Sin SLA",
   CUMPLIDA: "Cumplida",
+  INCUMPLIDA: "Fuera de término",
 };
+
+export const ETIQUETA_ROL = { SOLICITANTE: "Solicitante", AGENTE: "Agente", APROBADOR: "Aprobador" } as const;
+
+const fechaHora = new Intl.DateTimeFormat("es-AR", {
+  timeZone: ZONA,
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+export function formatearFechaHora(fecha: Date): string {
+  return fechaHora.format(fecha);
+}
 
 const dia = new Intl.DateTimeFormat("es-AR", { timeZone: ZONA, year: "numeric", month: "2-digit", day: "2-digit" });
 const hora = new Intl.DateTimeFormat("es-AR", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });

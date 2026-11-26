@@ -4,10 +4,20 @@ import { useActionState, useState } from "react";
 import { calcularPrioridad, estadoInicial, SLA_HORAS, type Nivel } from "@/domain/solicitud";
 import { ETIQUETA_ESTADO, ETIQUETA_PRIORIDAD, formatearHoras } from "@/lib/formato";
 import { Paletas } from "@/components/paletas";
-import { registrarSolicitud, type EstadoFormulario } from "./actions";
+import { registrarSolicitud } from "./actions";
+import { editarForm } from "../[id]/acciones";
 
 type Categoria = { id: number; nombre: string; requiereAprobacion: boolean };
-type Solicitante = { id: number; nombre: string; area: string };
+type EstadoFormulario = { errores?: Partial<Record<string, string[]>>; mensaje?: string; error?: string; valores?: Record<string, string> };
+
+type Modo =
+  | { tipo: "alta"; categorias: Categoria[] }
+  | {
+      tipo: "edicion";
+      solicitudId: number;
+      categoria: Categoria;
+      inicial: { titulo: string; descripcion: string; impacto: Nivel; urgencia: Nivel };
+    };
 
 const IMPACTO: { valor: Nivel; titulo: string; ayuda: string }[] = [
   { valor: "ALTO", titulo: "Alto", ayuda: "Un área entera o clientes" },
@@ -24,13 +34,16 @@ const URGENCIA: { valor: Nivel; titulo: string; ayuda: string }[] = [
 const campo =
   "w-full rounded border border-regla bg-papel px-3 py-2 text-base text-tinta placeholder:text-tinta-2 hover:border-tinta-2 aria-invalid:border-vencida";
 
-export function FormularioSolicitud({ categorias, solicitantes }: { categorias: Categoria[]; solicitantes: Solicitante[] }) {
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(registrarSolicitud, {});
-  const v = estado.valores ?? {};
+export function FormularioSolicitud({ modo }: { modo: Modo }) {
+  const edicion = modo.tipo === "edicion";
+  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(edicion ? editarForm : registrarSolicitud, {});
+  const v = estado.valores ?? (edicion ? modo.inicial : {});
+  const categorias = edicion ? [modo.categoria] : modo.categorias;
 
-  const [categoriaId, setCategoriaId] = useState(v.categoriaId ?? "");
+  const [categoriaId, setCategoriaId] = useState(edicion ? String(modo.categoria.id) : (v as Record<string, string>).categoriaId ?? "");
   const [impacto, setImpacto] = useState<Nivel | "">((v.impacto as Nivel) ?? "");
   const [urgencia, setUrgencia] = useState<Nivel | "">((v.urgencia as Nivel) ?? "");
+  const mensaje = estado.mensaje ?? estado.error;
 
   const categoria = categorias.find((c) => String(c.id) === categoriaId);
   const prioridad = impacto && urgencia ? calcularPrioridad(impacto, urgencia) : null;
@@ -52,9 +65,10 @@ export function FormularioSolicitud({ categorias, solicitantes }: { categorias: 
       className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]"
     >
       <div className="flex flex-col gap-6">
-        {estado.mensaje ? (
+        {edicion ? <input type="hidden" name="solicitudId" value={modo.solicitudId} /> : null}
+        {mensaje ? (
           <p role="alert" className="rounded border border-vencida bg-vencida-fondo px-4 py-3 text-sm text-vencida">
-            {estado.mensaje}
+            {mensaje}
           </p>
         ) : null}
 
@@ -86,7 +100,13 @@ export function FormularioSolicitud({ categorias, solicitantes }: { categorias: 
           />
         </Campo>
 
-        <div className="grid gap-6 sm:grid-cols-2">
+        {edicion ? (
+          <div className="flex flex-col gap-1.5">
+            <span className="font-bold">Tipo de pedido</span>
+            <p>{modo.categoria.nombre}</p>
+            <p className="text-sm text-tinta-2">No se puede cambiar: si te equivocaste de tipo, cancelá el pedido y creá otro.</p>
+          </div>
+        ) : (
           <Campo id="categoriaId" etiqueta="Tipo de pedido" errores={err.categoriaId}>
             <select
               id="categoriaId"
@@ -96,7 +116,7 @@ export function FormularioSolicitud({ categorias, solicitantes }: { categorias: 
               onChange={(e) => setCategoriaId(e.target.value)}
               aria-invalid={err.categoriaId ? true : undefined}
               aria-describedby="categoriaId-error"
-              className={campo}
+              className={`${campo} sm:max-w-sm`}
             >
               <option value="" disabled>
                 Elegí una opción
@@ -109,28 +129,7 @@ export function FormularioSolicitud({ categorias, solicitantes }: { categorias: 
               ))}
             </select>
           </Campo>
-
-          <Campo id="solicitanteId" etiqueta="Quién lo pide" ayuda="Sin inicio de sesión en v0.1 (RNF-03 pendiente)." errores={err.solicitanteId}>
-            <select
-              id="solicitanteId"
-              name="solicitanteId"
-              required
-              defaultValue={v.solicitanteId ?? ""}
-              aria-invalid={err.solicitanteId ? true : undefined}
-              aria-describedby="solicitanteId-ayuda solicitanteId-error"
-              className={campo}
-            >
-              <option value="" disabled>
-                Elegí una persona
-              </option>
-              {solicitantes.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.nombre} · {u.area}
-                </option>
-              ))}
-            </select>
-          </Campo>
-        </div>
+        )}
 
         <Escala nombre="impacto" leyenda="¿A quiénes afecta?" opciones={IMPACTO} valor={impacto} onChange={setImpacto} errores={err.impacto} />
         <Escala nombre="urgencia" leyenda="¿Cuánto puede esperar?" opciones={URGENCIA} valor={urgencia} onChange={setUrgencia} errores={err.urgencia} />
@@ -141,7 +140,7 @@ export function FormularioSolicitud({ categorias, solicitantes }: { categorias: 
             disabled={enviando}
             className="rounded bg-noche px-5 py-2.5 font-bold text-placa transition-colors hover:bg-noche-2 disabled:cursor-wait disabled:opacity-70"
           >
-            {enviando ? "Registrando…" : "Registrar solicitud"}
+            {enviando ? "Guardando…" : edicion ? "Guardar cambios" : "Registrar solicitud"}
           </button>
         </div>
       </div>
@@ -158,12 +157,16 @@ export function FormularioSolicitud({ categorias, solicitantes }: { categorias: 
               regla="RN-02"
               valor={prioridad ? formatearHoras(SLA_HORAS[prioridad]).toUpperCase() : "--"}
             />
-            <Lectura rotulo="Estado inicial" regla="RN-03" valor={inicial ? ETIQUETA_ESTADO[inicial].toUpperCase() : "--"} />
+            {edicion ? null : (
+              <Lectura rotulo="Estado inicial" regla="RN-03" valor={inicial ? ETIQUETA_ESTADO[inicial].toUpperCase() : "--"} />
+            )}
           </dl>
           <p className="mt-4 text-sm text-placa-tenue">
             {!prioridad || !categoria
               ? "Completá tipo de pedido, impacto y urgencia para ver el resultado."
-              : categoria.requiereAprobacion
+              : edicion
+                ? "Si cambia la prioridad, el vencimiento se recalcula desde que empezó a correr el plazo."
+                : categoria.requiereAprobacion
                 ? "El plazo empieza a correr cuando un aprobador la autorice."
                 : "El plazo corre desde que la registrás."}
           </p>

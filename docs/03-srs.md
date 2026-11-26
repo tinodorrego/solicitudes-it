@@ -1,6 +1,6 @@
 # 03 · Especificación de requisitos (SRS)
 
-Estructura basada en ISO/IEC/IEEE 29148, reducida a lo que este proyecto necesita. Versión 0.1.
+Estructura basada en ISO/IEC/IEEE 29148, reducida a lo que este proyecto necesita. Versión 0.2.
 
 ## 1. Propósito
 
@@ -33,7 +33,22 @@ Especificar el sistema que centraliza las solicitudes internas a IT, les asigna 
 
 **RN-04. Transiciones permitidas.** Solo se admiten las del diagrama de estados de [02 · Procesos](02-procesos.md#ciclo-de-vida-de-una-solicitud-rn-04). `CERRADA`, `RECHAZADA` y `CANCELADA` son estados finales.
 
-**RN-05. Semáforo de SLA.** *En término* si queda al menos el 25 % del plazo, *En riesgo* si queda menos del 25 %, *Vencida* al alcanzar el vencimiento. Las resueltas o cerradas cuentan como *Cumplida*. Las que no tienen SLA corriendo se muestran como *Sin SLA*.
+**RN-05. Semáforo de SLA.** *En término* si queda al menos el 25 % del plazo, *En riesgo* si queda menos del 25 %, *Vencida* al alcanzar el vencimiento. Las resueltas o cerradas se evalúan contra el momento de su última resolución: *Cumplida* si fue antes del vencimiento, *Fuera de término* si no. Las que no tienen SLA corriendo se muestran como *Sin SLA*.
+
+**RN-06. Permisos por rol.**
+
+| Acción | Desde | Hacia | Quién | Texto |
+|---|---|---|---|---|
+| Aprobar | Pendiente de aprobación | Nueva | Aprobador | opcional |
+| Rechazar | Pendiente de aprobación | Rechazada | Aprobador | motivo obligatorio |
+| Asignar | Nueva | Asignada | Agente (a sí mismo o a otro agente) | opcional |
+| Empezar a trabajar | Asignada | En progreso | Agente asignado | opcional |
+| Resolver | En progreso | Resuelta | Agente asignado | nota de resolución obligatoria |
+| Confirmar y cerrar | Resuelta | Cerrada | Quien la pidió | opcional |
+| Reabrir | Resuelta | En progreso | Quien la pidió | motivo obligatorio |
+| Cancelar | Pendiente, Nueva o Asignada | Cancelada | Quien la pidió | motivo obligatorio |
+
+Editar (RF-11) lo puede hacer solo quien la pidió, mientras esté Pendiente de aprobación o Nueva. Comentar (RF-12) lo puede hacer cualquiera mientras la solicitud no esté terminada.
 
 ## 4. Requisitos funcionales
 
@@ -44,11 +59,14 @@ Especificar el sistema que centraliza las solicitudes internas a IT, les asigna 
 | RF-03 | El sistema debe calcular el vencimiento a partir de la prioridad y el inicio del SLA. | RN-02 | Must | Implementado |
 | RF-04 | El sistema debe asignar el estado inicial según la categoría. | RN-03 | Must | Implementado |
 | RF-05 | El sistema debe listar las solicitudes ordenadas por vencimiento (las que no tienen SLA al final) y permitir filtrarlas por estado. | — | Must | Implementado |
-| RF-06 | El sistema debe registrar cada cambio de estado con estado anterior, nuevo, usuario y momento. | — | Must | Implementado (alta) |
-| RF-07 | El aprobador debe poder aprobar o rechazar solicitudes pendientes; el rechazo exige motivo. Al aprobar empieza a correr el SLA. | RN-03, RN-04 | Must | Pendiente |
-| RF-08 | El agente debe poder asignarse o asignar una solicitud. | RN-04 | Should | Pendiente |
-| RF-09 | El sistema debe permitir solo las transiciones de estado válidas. | RN-04 | Must | Parcial: regla y tests, sin interfaz |
-| RF-10 | El sistema debe mostrar el semáforo de SLA de cada solicitud. | RN-05 | Must | Implementado |
+| RF-06 | El sistema debe registrar cada cambio de estado con estado anterior, nuevo, usuario, motivo y momento. | — | Must | Implementado |
+| RF-07 | El aprobador debe poder aprobar o rechazar solicitudes pendientes; el rechazo exige motivo. Al aprobar empieza a correr el SLA. | RN-03, RN-04, RN-06 | Must | Implementado |
+| RF-08 | El agente debe poder asignarse o asignar una solicitud a otro agente. | RN-04, RN-06 | Must | Implementado |
+| RF-09 | El sistema debe ofrecer a cada usuario solo las acciones que puede ejecutar y rechazar en el servidor cualquier transición inválida. | RN-04, RN-06 | Must | Implementado |
+| RF-10 | El sistema debe mostrar el semáforo de SLA de cada solicitud, incluido si se resolvió a tiempo. | RN-05 | Must | Implementado |
+| RF-11 | Quien pidió la solicitud debe poder editar título, detalle, impacto y urgencia antes de que la tomen. La prioridad y el vencimiento se recalculan sin mover el inicio del plazo, y el cambio queda registrado. | RN-01, RN-02, RN-06 | Should | Implementado |
+| RF-12 | Los participantes deben poder dejar comentarios de seguimiento, que se muestran junto con los cambios de estado en una única línea de tiempo. | RN-06 | Must | Implementado |
+| RF-13 | El sistema debe mostrar indicadores de gestión: abiertas, vencidas, en riesgo, pendientes de aprobación, cumplimiento de SLA, tiempo medio de resolución, abiertas por prioridad, carga por agente, creadas y resueltas por día y solicitudes por tipo. | RN-05 | Should | Implementado |
 
 ## 5. Requisitos no funcionales
 
@@ -56,13 +74,13 @@ Especificar el sistema que centraliza las solicitudes internas a IT, les asigna 
 |---|---|---|---|
 | RNF-01 | Toda entrada se valida en el servidor, aunque el navegador ya la valide. | Test de validación + Server Action | Implementado |
 | RNF-02 | La interfaz está en español rioplatense y se puede usar con teclado: campos etiquetados, errores asociados al campo y foco visible. | Revisión manual | Implementado |
-| RNF-03 | El acceso requiere autenticación y cada rol ve solo sus acciones. | — | Pendiente |
+| RNF-03 | El acceso requiere autenticación y cada rol ve solo sus acciones. | Tests de permisos (RN-06) | Parcial: roles y permisos implementados en el servidor; el usuario se elige con un selector ("Actuando como") en lugar de iniciar sesión |
 | RNF-04 | Cada cambio pasa lint, verificación de tipos, tests y build en CI antes de integrarse. | GitHub Actions | Implementado |
 | RNF-05 | Las fechas se guardan con zona horaria (`timestamptz`) y se muestran en hora de Argentina. | Esquema + formato | Implementado |
 
 ## 6. Supuestos y restricciones
 
-- No hay inicio de sesión en v0.1. El solicitante se elige de una lista de usuarios ficticios.
+- No hay inicio de sesión: un selector "Actuando como" simula al usuario actual. Los permisos se validan igual en el servidor, así que sumar un login real solo reemplaza `src/lib/actor.ts`.
 - El SLA usa horas corridas; el calendario hábil y los feriados quedan para una versión futura.
 - Stack: Next.js, TypeScript y PostgreSQL. Las decisiones están en [`decisiones/`](decisiones/).
 

@@ -33,6 +33,12 @@ Overpass (Google Fonts, via `next/font`), a signage-derived sans. Tabular numera
 - **Option tiles:** radio inside a bordered label with a help line; checked state is `resaltado` plus a navy border.
 - Radii are 4px (`rounded`); no shadows, no cards.
 
+## Detail and dashboard
+
+- **Timeline:** a 2px rule on the left; navy filled dots for state changes, hollow dots for comments. Reasons and notes sit in a `papel` box under the event.
+- **Action panel:** one small form per available action. The primary action is filled navy; secondary actions (reject, reopen, cancel) are outlined. A required reason shows its textarea inline.
+- **Dashboard:** one hero figure (SLA compliance, navy block, amber number), stat tiles in a hairline grid, charts in bordered panels. Charts are plain HTML: bars up to 20px, 2px gaps between stacked segments, rounded data ends, a legend for two or more series, a table view under every chart. Series colours `#2f62b5` / `#c27c0e` (validated: CVD ΔE 26.5); SLA status colours are reserved for SLA meaning.
+
 ## Signature move
 
 `<Paletas>` (`src/components/paletas.tsx`): every character of a board readout flips in like a split-flap paddle when its value changes (320ms, ease-out, 28ms stagger). It runs on the readout panel and on the newly created row's due time. Disabled under `prefers-reduced-motion`.

@@ -10,6 +10,8 @@ erDiagram
   USUARIOS |o--o{ SOLICITUDES : "tiene asignadas"
   CATEGORIAS ||--o{ SOLICITUDES : "clasifica"
   SOLICITUDES ||--|{ HISTORIAL_ESTADOS : "registra"
+  SOLICITUDES ||--o{ COMENTARIOS : "tiene"
+  USUARIOS ||--o{ COMENTARIOS : "escribe"
   USUARIOS ||--o{ HISTORIAL_ESTADOS : "provoca"
 
   USUARIOS {
@@ -38,6 +40,15 @@ erDiagram
     timestamptz creada_en
     timestamptz inicio_sla "null si espera aprobación"
     timestamptz vence_en "RN-02"
+    timestamptz resuelta_en "null si no está resuelta"
+  }
+  COMENTARIOS {
+    serial id PK
+    integer solicitud_id FK
+    integer usuario_id FK
+    tipo_comentario tipo "COMENTARIO | EDICION"
+    text texto
+    timestamptz creado_en
   }
   HISTORIAL_ESTADOS {
     serial id PK
@@ -58,7 +69,9 @@ erDiagram
 | `solicitudes.estado` | enum `estado` | No | Inicial según la categoría (RN-03); cambia solo por transiciones válidas (RN-04). |
 | `solicitudes.inicio_sla` | timestamptz | Sí | Momento desde el que corre el plazo. Es `null` mientras espera aprobación. |
 | `solicitudes.vence_en` | timestamptz | Sí | `inicio_sla + horas(prioridad)` (RN-02). Indexado para ordenar el tablero. |
+| `solicitudes.resuelta_en` | timestamptz | Sí | Momento de la última resolución; se limpia al reabrir. Base del cumplimiento de SLA (RN-05, RF-13). |
 | `historial_estados.estado_anterior` | enum `estado` | Sí | `null` solo en el evento de alta. |
+| `comentarios.tipo` | enum `tipo_comentario` | No | `EDICION` lo genera el sistema al editar (RF-11); `COMENTARIO` lo escribe una persona (RF-12). |
 | `categorias.requiere_aprobacion` | boolean | No | Define si la solicitud pasa por aprobación (RN-03). |
 
 ## Decisiones de modelado

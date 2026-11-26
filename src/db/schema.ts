@@ -11,8 +11,9 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { ESTADOS, NIVELES, PRIORIDADES } from "@/domain/solicitud";
+import { ROLES } from "@/domain/acciones";
 
-export const rolEnum = pgEnum("rol", ["SOLICITANTE", "AGENTE", "APROBADOR"]);
+export const rolEnum = pgEnum("rol", ROLES);
 export const nivelEnum = pgEnum("nivel", NIVELES);
 export const prioridadEnum = pgEnum("prioridad", PRIORIDADES);
 export const estadoEnum = pgEnum("estado", ESTADOS);
@@ -51,6 +52,8 @@ export const solicitudes = pgTable(
     creadaEn: timestamp("creada_en", { withTimezone: true }).notNull(),
     inicioSla: timestamp("inicio_sla", { withTimezone: true }),
     venceEn: timestamp("vence_en", { withTimezone: true }),
+    /** Momento de la última resolución; se limpia al reabrir. Base del cumplimiento de SLA (RF-13). */
+    resueltaEn: timestamp("resuelta_en", { withTimezone: true }),
   },
   (t) => [index("solicitudes_estado_idx").on(t.estado), index("solicitudes_vence_idx").on(t.venceEn)],
 );
@@ -71,4 +74,24 @@ export const historialEstados = pgTable(
     ocurridoEn: timestamp("ocurrido_en", { withTimezone: true }).notNull(),
   },
   (t) => [index("historial_solicitud_idx").on(t.solicitudId)],
+);
+
+export const tipoComentarioEnum = pgEnum("tipo_comentario", ["COMENTARIO", "EDICION"]);
+
+/** RF-11 y RF-12 — Comentarios de seguimiento y registro de ediciones. */
+export const comentarios = pgTable(
+  "comentarios",
+  {
+    id: serial("id").primaryKey(),
+    solicitudId: integer("solicitud_id")
+      .notNull()
+      .references(() => solicitudes.id, { onDelete: "cascade" }),
+    usuarioId: integer("usuario_id")
+      .notNull()
+      .references(() => usuarios.id),
+    tipo: tipoComentarioEnum("tipo").notNull().default("COMENTARIO"),
+    texto: text("texto").notNull(),
+    creadoEn: timestamp("creado_en", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("comentarios_solicitud_idx").on(t.solicitudId)],
 );

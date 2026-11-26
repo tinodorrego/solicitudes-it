@@ -37,10 +37,12 @@ Los pedidos a IT llegan por cuatro canales: mail a una casilla compartida, chat 
 
 ## Alcance
 
-**Dentro de v0.1:** alta de solicitudes, prioridad calculada, vencimiento de SLA, estado inicial según la categoría, tablero ordenado por vencimiento con filtro y semáforo, historial del alta.
+**v0.1:** alta de solicitudes, prioridad calculada, vencimiento de SLA, estado inicial según la categoría y tablero ordenado por vencimiento con filtro y semáforo.
 
-**Próximas versiones:** aprobación y rechazo, asignación a agentes, cambios de estado desde la interfaz, autenticación por roles, horario hábil para el SLA y reportes de cumplimiento.
+**v0.2:** ciclo de vida completo (aprobación, rechazo, asignación, trabajo, resolución, cierre, reapertura y cancelación) con permisos por rol, edición, comentarios de seguimiento y dashboard de indicadores.
 
-**Fuera de alcance:** inventario de activos, base de conocimiento, integración con mail.
+**Próximas versiones:** inicio de sesión real, horario hábil y feriados para el SLA, notificaciones por mail y exportación de reportes.
+
+**Fuera de alcance:** inventario de activos, base de conocimiento y alta de solicitudes por mail.
 
 Siguiente: [02 · Procesos](02-procesos.md).

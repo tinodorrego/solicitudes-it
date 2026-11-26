@@ -1,5 +1,4 @@
 /** Datos semilla ficticios. Ninguno corresponde a personas u organizaciones reales. */
-import { sql } from "drizzle-orm";
 import type { Db } from "./client";
 import { categorias, usuarios } from "./schema";
 
@@ -15,13 +14,12 @@ export const USUARIOS_SEMILLA = [
   { nombre: "Ana Torres", email: "ana.torres@ejemplo.test", area: "Finanzas", rol: "SOLICITANTE" as const },
   { nombre: "Bruno Paz", email: "bruno.paz@ejemplo.test", area: "Comercial", rol: "SOLICITANTE" as const },
   { nombre: "Carla Ríos", email: "carla.rios@ejemplo.test", area: "Mesa de ayuda", rol: "AGENTE" as const },
+  { nombre: "Martín Gil", email: "martin.gil@ejemplo.test", area: "Mesa de ayuda", rol: "AGENTE" as const },
   { nombre: "Diego Sosa", email: "diego.sosa@ejemplo.test", area: "Gerencia IT", rol: "APROBADOR" as const },
 ];
 
-/** Idempotente: solo inserta si las tablas de referencia están vacías. */
+/** Idempotente: agrega lo que falte sin duplicar (claves únicas por nombre y email). */
 export async function sembrar(db: Db): Promise<void> {
-  const [{ total }] = await db.select({ total: sql<number>`count(*)::int` }).from(categorias);
-  if (total > 0) return;
-  await db.insert(categorias).values(CATEGORIAS_SEMILLA);
-  await db.insert(usuarios).values(USUARIOS_SEMILLA);
+  await db.insert(categorias).values(CATEGORIAS_SEMILLA).onConflictDoNothing();
+  await db.insert(usuarios).values(USUARIOS_SEMILLA).onConflictDoNothing();
 }

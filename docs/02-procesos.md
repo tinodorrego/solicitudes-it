@@ -45,12 +45,16 @@ flowchart LR
   G -- No --> R((Rechazada))
   subgraph AG[Agente]
     E --> H[Toma la solicitud del tablero, ordenado por vencimiento]
-    H --> I[Resuelve]
+    H --> I[Trabaja y resuelve con nota de resolución]
   end
-  I --> J((Resuelta))
+  subgraph CI[Solicitante]
+    I --> K{¿Quedó resuelto?}
+  end
+  K -- Sí --> J((Cerrada))
+  K -- No, reabre con motivo --> H
 ```
 
-En v0.1 está implementado el carril del Sistema y el registro. La aprobación (RF-07) y la asignación (RF-08) están documentadas y quedan para la próxima versión.
+Desde v0.2 están implementados todos los carriles: registro, aprobación (RF-07), asignación y trabajo del agente (RF-08, RF-09), con los permisos de RN-06.
 
 ## Ciclo de vida de una solicitud (RN-04)
 

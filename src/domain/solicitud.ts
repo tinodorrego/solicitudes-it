@@ -77,20 +77,25 @@ export function esEstadoFinal(estado: Estado): boolean {
   return TRANSICIONES[estado].length === 0;
 }
 
-export type EstadoSla = "SIN_SLA" | "EN_TERMINO" | "EN_RIESGO" | "VENCIDA" | "CUMPLIDA";
+export type EstadoSla = "SIN_SLA" | "EN_TERMINO" | "EN_RIESGO" | "VENCIDA" | "CUMPLIDA" | "INCUMPLIDA";
 
 /**
  * RF-10 / RN-05 — Semáforo de SLA. "En riesgo" cuando queda menos del 25 %
- * del plazo total. Las solicitudes resueltas o en estado final no se evalúan.
+ * del plazo total. Las resueltas o cerradas se evalúan contra el momento en que
+ * se resolvieron: "Cumplida" si fue a tiempo, "Incumplida" si no.
  */
 export function evaluarSla(params: {
   estado: Estado;
   inicioSla: Date | null;
   vencimiento: Date | null;
   ahora: Date;
+  resueltaEn?: Date | null;
 }): EstadoSla {
-  const { estado, inicioSla, vencimiento, ahora } = params;
-  if (estado === "RESUELTA" || estado === "CERRADA") return "CUMPLIDA";
+  const { estado, inicioSla, vencimiento, ahora, resueltaEn } = params;
+  if (estado === "RESUELTA" || estado === "CERRADA") {
+    if (!vencimiento) return "SIN_SLA";
+    return resueltaEn && resueltaEn.getTime() > vencimiento.getTime() ? "INCUMPLIDA" : "CUMPLIDA";
+  }
   if (!inicioSla || !vencimiento || esEstadoFinal(estado)) return "SIN_SLA";
 
   const total = vencimiento.getTime() - inicioSla.getTime();

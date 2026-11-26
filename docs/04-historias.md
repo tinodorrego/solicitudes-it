@@ -58,7 +58,7 @@ Verificación: `tests/dominio.test.ts › RF-02 / RN-01` (las 9 combinaciones), 
 
 **Como** aprobador de Gerencia IT, **quiero** que los pedidos de acceso, hardware y software esperen mi autorización **para** que nada sensible se ejecute sin registro.
 
-Cubre: RF-04, RF-07 · Estado: **Parcial** (el estado inicial está hecho; aprobar y rechazar queda pendiente)
+Cubre: RF-04, RF-07 · Estado: **Hecha**
 
 ```gherkin
 Escenario: Nace pendiente y sin reloj
@@ -66,13 +66,21 @@ Escenario: Nace pendiente y sin reloj
   Entonces queda en "Pendiente de aprobación"
   Y no tiene vencimiento hasta que se apruebe
 
-Escenario: Aprobación (pendiente, RF-07)
+Escenario: Aprobación
   Dado una solicitud pendiente de aprobación
   Cuando el aprobador la aprueba
   Entonces pasa a "Nueva" y el SLA empieza a correr desde ese momento
+
+Escenario: Rechazo con motivo
+  Cuando el aprobador la rechaza sin escribir motivo
+  Entonces el sistema pide "Indicá el motivo." y no la rechaza
+
+Escenario: Solo aprueba un aprobador (RN-06)
+  Dado que actúo como agente
+  Entonces no veo la acción "Aprobar" y el servidor la rechaza si la intento
 ```
 
-Verificación: `tests/solicitudes.test.ts › queda PENDIENTE_APROBACION…`.
+Verificación: `tests/solicitudes.test.ts › queda PENDIENTE_APROBACION…`, `tests/ciclo.test.ts › RF-07`.
 
 ---
 
@@ -106,15 +114,19 @@ Verificación: `tests/solicitudes.test.ts › RF-05`, `tests/dominio.test.ts ›
 
 **Como** responsable de IT, **quiero** el historial de estados de cada solicitud **para** auditar qué pasó y cuándo.
 
-Cubre: RF-06 · Estado: **Parcial** (se registra el alta; los cambios posteriores llegan con RF-07 y RF-08)
+Cubre: RF-06, RF-12 · Estado: **Hecha**
 
 ```gherkin
 Escenario: Historial del alta
   Cuando se registra una solicitud
   Entonces el historial tiene un evento sin estado anterior y con el estado inicial
+
+Escenario: Línea de tiempo completa
+  Dado una solicitud que pasó por asignar, empezar, resolver y cerrar
+  Entonces el seguimiento muestra cada paso con quién, cuándo y el motivo o nota
 ```
 
-Verificación: `tests/solicitudes.test.ts › RF-06`.
+Verificación: `tests/solicitudes.test.ts › RF-06`, `tests/ciclo.test.ts › recorre asignar → iniciar → resolver → cerrar…`.
 
 ---
 
@@ -122,15 +134,86 @@ Verificación: `tests/solicitudes.test.ts › RF-06`.
 
 **Como** responsable de IT, **quiero** que el sistema no permita saltearse pasos (por ejemplo, ejecutar algo sin aprobar) **para** que el proceso sea confiable.
 
-Cubre: RF-09 · Estado: **Parcial** (la regla y sus tests están; falta la interfaz)
+Cubre: RF-08, RF-09 · Estado: **Hecha**
 
 ```gherkin
 Escenario: Transición inválida
   Dado una solicitud "Pendiente de aprobación"
   Cuando se intenta pasar a "Asignada"
   Entonces el sistema lo rechaza
+
+Escenario: Cada uno ve sus acciones
+  Dado una solicitud "Nueva"
+  Entonces quien la pidió ve "Cancelar pedido", un agente ve "Asignar" y un aprobador no ve acciones
+
+Escenario: Solo el agente asignado la trabaja
+  Dado una solicitud asignada a Carla
+  Cuando Martín intenta empezarla
+  Entonces el sistema responde "Solo el agente asignado puede hacerlo."
 ```
 
-Verificación: `tests/dominio.test.ts › RF-09 / RN-04`.
+Verificación: `tests/dominio.test.ts › RF-09 / RN-04`, `tests/ciclo.test.ts › RF-08 / RF-09`.
+
+---
+
+## HU-07 · Corregir mi pedido antes de que lo tomen
+
+**Como** solicitante, **quiero** corregir el pedido si me equivoqué en el impacto o la urgencia **para** que se atienda con la prioridad correcta.
+
+Cubre: RF-11 · Estado: **Hecha**
+
+```gherkin
+Escenario: Edición que cambia la prioridad
+  Dado mi solicitud "Nueva" con impacto Medio y urgencia Alta, creada hace 1 hora
+  Cuando cambio el impacto a Alto
+  Entonces la prioridad pasa a Crítica, vence 4 horas después de su creación
+  Y el seguimiento muestra "Editó impacto Medio → Alto."
+
+Escenario: Ya la tomaron
+  Dado mi solicitud "Asignada"
+  Entonces no puedo editarla
+```
+
+Verificación: `tests/ciclo.test.ts › RF-11`.
+
+---
+
+## HU-08 · Conversar sobre el pedido sin salir del sistema
+
+**Como** solicitante o agente, **quiero** dejar comentarios en la solicitud **para** no volver al mail o al chat (P-01).
+
+Cubre: RF-12 · Estado: **Hecha**
+
+```gherkin
+Escenario: Comentario
+  Cuando escribo un comentario
+  Entonces aparece en el seguimiento con mi nombre y la hora
+
+Escenario: Solicitud terminada
+  Dado una solicitud cancelada
+  Entonces ya no admite comentarios
+```
+
+Verificación: `tests/ciclo.test.ts › RF-12`.
+
+---
+
+## HU-09 · Ver cómo viene la mesa de ayuda
+
+**Como** responsable de IT, **quiero** un tablero de indicadores **para** saber si cumplimos los plazos y dónde está la carga.
+
+Cubre: RF-13 · Estado: **Hecha**
+
+```gherkin
+Escenario: Cumplimiento de SLA
+  Dado 2 solicitudes resueltas, una dentro del plazo y otra fuera
+  Entonces el cumplimiento de SLA es 50 %
+
+Escenario: Mismas reglas que el tablero
+  Dado una solicitud abierta y vencida
+  Entonces cuenta como vencida en el indicador y en su prioridad
+```
+
+Verificación: `tests/ciclo.test.ts › RF-13`.
 
 Siguiente: [05 · Modelo de datos](05-modelo-datos.md).
